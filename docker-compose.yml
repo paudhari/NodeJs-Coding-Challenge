@@ -1,0 +1,43 @@
+version: '3'
+services:
+  application:
+    build:
+      context: ./application
+    image: dash-code-challange-application
+    working_dir: ${PWD}/application
+    volumes:
+      - ./application:${PWD}/application:delegated
+      # this is a workaround to prevent host node_modules from accidentally getting mounted in container
+      # in case you want to use node/npm both outside container for test/lint etc. and also inside container
+      # this will overwrite the default node_modules dir in container so it won't conflict with our
+      # /node_modules location.
+      - app_node_modules:${PWD}/application/node_modules
+    environment :
+      - SERVICE_ENDPOINT=http://p2pservice:3000
+    depends_on:
+      - p2pservice
+  p2pservice:
+    build:
+      context: ./p2pStorage
+    image: p2p-service-dash-code-challange-application
+    working_dir: ${PWD}/p2pStorage
+    volumes:
+      - ./p2pStorage:${PWD}/p2pStorage:delegated
+      # this is a workaround to prevent host node_modules from accidentally getting mounted in container
+      # in case you want to use node/npm both outside container for test/lint etc. and also inside container
+      # this will overwrite the default node_modules dir in container so it won't conflict with our
+      # /node_modules location.
+      - p2p_node_modules:${PWD}/p2pStorage/node_modules
+    ports:
+      - "80:3000"
+    environment :
+      - REDIS_HOST=redis_service
+      - REDIS_PORT=6379
+    depends_on:
+      - redis_service
+  redis_service:
+      image: redis
+volumes:
+  app_node_modules:
+  p2p_node_modules:
+
